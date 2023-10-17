@@ -1,0 +1,47 @@
+.s-dislike-sentence {
+	--sgy-font-default: 'Sgy Open Sans', 'Open Sans', Helvetica, Arial, sans-serif;
+	--sgy-font-light: 'Sgy Muli', 'Muli', sans-serif;
+	--sgy-font-bold: 'Sgy Muli Bold', 'Muli Bold', sans-serif;
+	--sgy-font-mono-space: 'Courier New', Courier, monospace;
+	--sgy-font-cursive: cursive;
+	--sgy-background-color-default: #faf9f7;
+	display: block;
+	color: #333;
+	padding-inline-start: 20px;
+	border-bottom: 1px solid #e2e2e2;
+	padding: 7px 0 7px 20px;
+	outline: none;
+	word-wrap: break-word;
+	text-align: -webkit-match-parent;
+	list-style: none;
+	background: var(--sgy-background-color-default);
+	font: 12px var(--sgy-font-default);
+	text-wrap: normal;
+	background: var(--sgy-background-color-default);
+}
+.s-dislike-sentence span {
+	float: left;
+	margin: -1px 0 0;
+	margin-inline-start: -20px;
+	height: 16px;
+	width: 20px;
+	padding: 0;
+	outline: none;
+	word-wrap: break-word;
+}
+.s-dislike-comment {
+	background: none !important;
+	padding: 0 !important;
+	cursor: pointer !important;
+}
+.s-dislike-comment a {
+	padding: 0 0 0 !important;
+	padding-inline-start: 19px !important;
+	display: inline-block;
+	margin: 0 0 0 5px;
+	font-weight: normal;
+	outline: none;
+	text-decoration: none;
+	word-wrap: break-word;
+	cursor: default;
+}
