@@ -1,13 +1,30 @@
 const SERVER_URL =
-	'https://script.google.com/macros/s/AKfycbypVGcHZ7mBtbTx6a2C6gDww9jSgvKL4i497L4R9vWu4mvJ0LNG06cnEowLRWhlbQGb/exec';
+	'https://script.google.com/macros/s/AKfycbwYVq97A3YqbWCHTG--j5rwFTdq9qIVKfoFl7JwXO57zTc5Jx4iaSwYtEcrYq8ebrZ2/exec';
 const USER_ID = 'bens_test_id';
 
-function waitingForLoad() {
-	let numPosts = document.getElementsByClassName('edge-item').length;
-	if (numPosts < 1) {
-		setTimeout(waitingForLoad, 500);
+let numPosts = 0;
+
+function waitingForPostLoad() {
+	let newNumPosts = document.getElementsByClassName('edge-item').length;
+	if (newNumPosts == numPosts) {
+		setTimeout(waitingForPostLoad, 100);
 		return;
 	}
+	numPosts = newNumPosts;
+	updatePage();
+}
+
+function waitingForCommentLoad(target) {
+	if (document.getElementById(target.id)) {
+		setTimeout(() => {
+			waitingForCommentLoad(target);
+		}, 100);
+		return;
+	}
+	updatePage();
+}
+
+function updatePage() {
 	modifyPage();
 
 	let query = [];
@@ -20,7 +37,7 @@ function waitingForLoad() {
 	let request = new XMLHttpRequest();
 	request.open(
 		'GET',
-		SERVER_URL + '?mode=get&posts=' + JSON.stringify(query) + '&user=' + USER_ID
+		SERVER_URL + '?mode=get&posts=' + JSON.stringify(query) + '&uid=' + USER_ID
 	);
 	request.send();
 	request.onload = () => {
@@ -32,69 +49,98 @@ function modifyPage() {
 	let posts = document.getElementsByClassName('edge-item');
 
 	for (let i = 0; i < posts.length; ++i) {
-		posts[i]
-			.getElementsByClassName('edge-footer')[0]
-			.children[2].insertAdjacentText('afterend', ' · ');
-		let newDislikeButton = posts[i]
-			.getElementsByClassName('edge-footer')[0]
-			.children[3].insertAdjacentElement(
-				'beforebegin',
-				posts[i].getElementsByClassName('edge-footer')[0].children[2].cloneNode(true)
-			);
-		newDislikeButton.children[0].textContent = 'Dislike';
-		newDislikeButton.classList.add('dislike-button');
-		newDislikeButton.children[0].style.color = 'red';
-		if (posts[i].getElementsByClassName('s-like-sentence').length > 0) {
-			let newDislike = posts[i]
-				.getElementsByClassName('s-like-sentence')[0]
-				.insertAdjacentElement(
-					'afterend',
-					posts[i].getElementsByClassName('s-like-sentence')[0].cloneNode(true)
-				);
-			newDislike.className = 's-dislike-sentence';
-			newDislike.classList.add('dislike-counter');
-			newDislike.children[0].style.background =
-				'url(' +
-				chrome.runtime.getURL('images/icons_sprite_feed_modified.png') +
-				') no-repeat -1px -76px';
-			newDislike.children[1].remove();
-			newDislike.lastChild.textContent = '__ people disliked this';
-		} else {
+		if (posts[i].getElementsByClassName('s-dislike-sentence').length == 0) {
 			posts[i]
-				.getElementsByClassName('feed-comments')[0]
-				.classList.remove('s-update-edge-hide-comments-form');
-			let newDislike = posts[i]
-				.getElementsByClassName('feed-comments-top')[0]
-				.insertAdjacentHTML(
-					'afterend',
-					'<span class="s-dislike-sentence dislike-counter"><span style="background: url(' +
-						chrome.runtime.getURL('images/icons_sprite_feed_modified.png') +
-						') -1px -76px no-repeat;"></span>__ people disliked this</span>'
+				.getElementsByClassName('edge-footer')[0]
+				.children[2].insertAdjacentText('afterend', ' · ');
+			let newDislikeButton = posts[i]
+				.getElementsByClassName('edge-footer')[0]
+				.children[3].insertAdjacentElement(
+					'beforebegin',
+					posts[i].getElementsByClassName('edge-footer')[0].children[2].cloneNode(true)
 				);
+			newDislikeButton.children[0].textContent = 'Dislike';
+			newDislikeButton.classList.add('dislike-button');
+			newDislikeButton.children[0].style.color = 'red';
+			if (posts[i].getElementsByClassName('s-like-sentence').length > 0) {
+				let newDislike = posts[i]
+					.getElementsByClassName('s-like-sentence')[0]
+					.insertAdjacentElement(
+						'afterend',
+						posts[i].getElementsByClassName('s-like-sentence')[0].cloneNode(true)
+					);
+				newDislike.className = 's-dislike-sentence';
+				newDislike.classList.add('dislike-counter');
+				newDislike.children[0].style.background =
+					'url(' +
+					chrome.runtime.getURL('images/icons_sprite_feed_modified.png') +
+					') no-repeat -1px -76px';
+				newDislike.children[1].remove();
+				newDislike.lastChild.textContent = '__ people disliked this';
+			} else {
+				posts[i]
+					.getElementsByClassName('feed-comments')[0]
+					.classList.remove('s-update-edge-hide-comments-form');
+				let newDislike = posts[i]
+					.getElementsByClassName('feed-comments-top')[0]
+					.insertAdjacentHTML(
+						'afterend',
+						'<span class="s-dislike-sentence dislike-counter"><span style="background: url(' +
+							chrome.runtime.getURL('images/icons_sprite_feed_modified.png') +
+							') -1px -76px no-repeat;"></span>__ people disliked this</span>'
+					);
+			}
 		}
 	}
 
 	let comments = document.getElementsByClassName('comment-footer');
 	for (let i = 0; i < comments.length; ++i) {
-		comments[i].insertBefore(document.createTextNode(' · '), comments[i].lastChild);
-		let newDislikeButton = comments[i].insertBefore(
-			comments[i].children[1].cloneNode(true),
-			comments[i].lastChild
-		);
-		newDislikeButton.removeAttribute('ajax');
-		newDislikeButton.classList.add('dislike-button');
-		newDislikeButton.textContent = 'Dislike';
-		newDislikeButton.style.setProperty('color', 'red', 'important');
+		if (comments[i].getElementsByClassName('dislike-button').length == 0) {
+			comments[i].insertBefore(document.createTextNode(' · '), comments[i].lastChild);
+			let newDislikeButton = comments[i].insertBefore(
+				comments[i].children[1].cloneNode(true),
+				comments[i].lastChild
+			);
+			newDislikeButton.removeAttribute('ajax');
+			newDislikeButton.classList.add('dislike-button');
+			newDislikeButton.textContent = 'Dislike';
+			newDislikeButton.style.setProperty('color', 'red', 'important');
 
-		let newDislikeCounter = comments[i].lastElementChild.insertAdjacentHTML(
-			'afterend',
-			'<span class="infotip sCommonInfotip-processed s-dislike-comment" tipsygravity="s" tabindex="0" original-title=""><a class="like-details-btn schoology-processed sExtlink-processed" style="background: url(' +
-				chrome.runtime.getURL('images/icons_sprite_feed_modified.png') +
-				') 0px -77px no-repeat;"><span class="s-like-comment-icon dislike-counter">__</span></a><span class="infotip-content">__ people like this</span></span>'
-		);
-		// newDislikeCounter.getElementsByClassName('s-like-comment-icon')[0].innerText =
-		// 	output[i + posts.length].dislikes;
-		// newDislikeCounter.getElementsByClassName('s-like-comment-icon')[0].style.color = 'red';
+			let newDislikeCounter = comments[i].lastElementChild.insertAdjacentHTML(
+				'afterend',
+				'<span class="infotip sCommonInfotip-processed s-dislike-comment" tipsygravity="s" tabindex="0" original-title=""><a class="like-details-btn schoology-processed sExtlink-processed" style="background: url(' +
+					chrome.runtime.getURL('images/icons_sprite_feed_modified.png') +
+					') 0px -77px no-repeat;"><span class="s-like-comment-icon dislike-counter">__</span></a><span class="infotip-content">__ people like this</span></span>'
+			);
+			// newDislikeCounter.getElementsByClassName('s-like-comment-icon')[0].innerText =
+			// 	output[i + posts.length].dislikes;
+			// newDislikeCounter.getElementsByClassName('s-like-comment-icon')[0].style.color = 'red';
+		}
+	}
+
+	if (
+		!document
+			.getElementsByClassName('s-edge-feed-more-link')[0]
+			.classList.contains('added-dislike-onclick')
+	) {
+		document
+			.getElementsByClassName('s-edge-feed-more-link')[0]
+			.children[0].addEventListener('click', () => {
+				waitingForPostLoad();
+			});
+		document
+			.getElementsByClassName('s-edge-feed-more-link')[0]
+			.classList.add('added-dislike-onclick');
+	}
+
+	let showMoreComments = document.getElementsByClassName('feed-comments-viewall');
+	for (let i = 0; i < showMoreComments.length; ++i) {
+		if (!showMoreComments[i].classList.contains('added-dislike-onclick')) {
+			showMoreComments[i].addEventListener('click', (event) => {
+				waitingForCommentLoad(event.target);
+			});
+			showMoreComments[i].classList.add('added-dislike-onclick');
+		}
 	}
 }
 
@@ -136,10 +182,22 @@ function updateValues(dislikes) {
 						counters[i].parentElement.parentElement.style.display = 'inline';
 					} else counters[i].parentElement.parentElement.style.display = 'none';
 				}
+				let textToSet;
+				if (dislikes[j].dislikedByUser) textToSet = 'Undislike';
+				else textToSet = 'Dislike';
+				if (counters[i].classList.contains('s-dislike-sentence')) {
+					counters[i].parentElement.parentElement.getElementsByClassName(
+						'dislike-button'
+					)[0].children[0].textContent = textToSet;
+				} else {
+					counters[i].parentElement.parentElement.parentElement.getElementsByClassName(
+						'dislike-button'
+					)[0].textContent = textToSet;
+				}
 				break;
 			}
 		}
 	}
 }
 
-waitingForLoad();
+waitingForPostLoad();
