@@ -25,7 +25,7 @@ function doGet(e){
         let rows = DISLIKE_DATA.getRange("A:A").offset(1, 0).createTextFinder(posts[i]).matchEntireCell(true).matchCase(true).findAll();
         let dislikedByUser = false;
         for (let j = 0; j < rows.length; ++j){
-          if (rows[j].offset(0, 1).getValue() == e.parameter.user){
+          if (rows[j].offset(0, 1).getValue() == e.parameter.uid){
             dislikedByUser = true;
             break;
           }
