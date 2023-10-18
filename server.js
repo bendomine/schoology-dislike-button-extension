@@ -37,6 +37,9 @@ function doGet(e){
     else if (e.parameter.mode == "add"){
       let post = e.parameter.post;
       let uid = e.parameter.uid;
+      let row = DISLIKE_DATA.getRange("A:A").offset(1, 0).createTextFinder("^$").useRegularExpression(true).matchEntireCell(true).findNext();
+      if (row == null) row = DISLIKE_DATA.getLastRow() + 1;
+      else row = row.getRowIndex();
       let foundUser = USER_REGISTRY.getRange("A:A").offset(1, 0).createTextFinder(uid).matchEntireCell(true).matchCase(true).findAll().length > 0;
       if (!foundUser){
         throw new ReferenceError("User ID not found");
@@ -45,10 +48,24 @@ function doGet(e){
       for (let i = 0; i < dislikes.length; ++i){
         if (dislikes[i].offset(0, 1).getValue() == uid) throw new Error('User already disliked this post');
       }
-      DISLIKE_DATA.getRange(DISLIKE_DATA.getLastRow() + 1, 1, 1, 2).setValues([[post, uid]]);
+      DISLIKE_DATA.getRange(row, 1, 1, 2).setValues([[post, uid]]);
       return ContentService.createTextOutput(JSON.stringify({"success": true, "operation": "add", "output": {"post": post, "uid": uid}})).setMimeType(ContentService.MimeType.JSON);
     }
+    else if (e.parameter.mode == "remove"){
+      let post = e.parameter.post;
+      let uid = e.parameter.uid;
+      let dislikes = DISLIKE_DATA.getRange("A:A").offset(1, 0).createTextFinder(post).matchEntireCell(true).matchCase(true).findAll();
+      for (let i = 0; i < dislikes.length; ++i){
+        if (dislikes[i].offset(0, 1).getValue() == uid){
+          DISLIKE_DATA.getRange(dislikes[i].getRow(), 1, 1, 2).setValues([["", ""]]);
+          return ContentService.createTextOutput(JSON.stringify({"success": true, "operation": "remove", "output": {"post": post, "uid": uid}})).setMimeType(ContentService.MimeType.JSON);
+        }
+      }
+      throw new Error("Dislike not found");
+
+    }
   }
+    
   catch (e){
     return ContentService.createTextOutput(JSON.stringify({"success": false, "output": {"type": e.type, "message": e.message}})).setMimeType(ContentService.MimeType.JSON);
   }
