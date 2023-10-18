@@ -1,5 +1,5 @@
 const SERVER_URL =
-	'https://script.google.com/macros/s/AKfycbwYVq97A3YqbWCHTG--j5rwFTdq9qIVKfoFl7JwXO57zTc5Jx4iaSwYtEcrYq8ebrZ2/exec';
+	'https://script.google.com/macros/s/AKfycbwM6xsc9vJ_0I1c8r624Z0pstRWciDK0-JMKjrENz0ufAi5hlkxg8PERHlvYCKC0GEY/exec';
 const USER_ID = 'bens_test_id';
 
 let numPosts = 0;
@@ -62,6 +62,12 @@ function modifyPage() {
 			newDislikeButton.children[0].textContent = 'Dislike';
 			newDislikeButton.classList.add('dislike-button');
 			newDislikeButton.children[0].style.color = 'red';
+			newDislikeButton.removeAttribute('ajax');
+			newDislikeButton.onclick = () => {
+				dislike(
+					posts[i].getElementsByClassName('like-btn')[0].getAttribute('ajax').substring(8)
+				);
+			};
 			if (posts[i].getElementsByClassName('s-like-sentence').length > 0) {
 				let newDislike = posts[i]
 					.getElementsByClassName('s-like-sentence')[0]
@@ -105,6 +111,14 @@ function modifyPage() {
 			newDislikeButton.classList.add('dislike-button');
 			newDislikeButton.textContent = 'Dislike';
 			newDislikeButton.style.setProperty('color', 'red', 'important');
+			newDislikeButton.onlick = () => {
+				dislike(
+					comments[i]
+						.getElementsByClassName('like-btn')[0]
+						.getAttribute('ajax')
+						.substring(8)
+				);
+			};
 
 			let newDislikeCounter = comments[i].lastElementChild.insertAdjacentHTML(
 				'afterend',
@@ -112,8 +126,6 @@ function modifyPage() {
 					chrome.runtime.getURL('images/icons_sprite_feed_modified.png') +
 					') 0px -77px no-repeat;"><span class="s-like-comment-icon dislike-counter">__</span></a><span class="infotip-content">__ people like this</span></span>'
 			);
-			// newDislikeCounter.getElementsByClassName('s-like-comment-icon')[0].innerText =
-			// 	output[i + posts.length].dislikes;
 			// newDislikeCounter.getElementsByClassName('s-like-comment-icon')[0].style.color = 'red';
 		}
 	}
@@ -198,6 +210,26 @@ function updateValues(dislikes) {
 			}
 		}
 	}
+}
+
+function dislike(postId) {
+	let request = new XMLHttpRequest();
+	request.open('GET', SERVER_URL + '?mode=add&post=' + postId + '&uid=' + USER_ID);
+	request.onload = () => {
+		console.log(request.responseText);
+		updatePage();
+	};
+	request.send();
+}
+
+function undislike(postId) {
+	let request = new XMLHttpRequest();
+	request.open('GET', SERVER_URL + '?mode=remove&post=' + postId + '&uid=' + USER_ID);
+	request.onload = () => {
+		console.log(request.responseText);
+		updatePage();
+	};
+	request.send();
 }
 
 waitingForPostLoad();
