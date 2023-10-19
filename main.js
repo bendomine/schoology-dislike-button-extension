@@ -63,11 +63,6 @@ function modifyPage() {
 			newDislikeButton.classList.add('dislike-button');
 			newDislikeButton.children[0].style.color = 'red';
 			newDislikeButton.removeAttribute('ajax');
-			newDislikeButton.onclick = () => {
-				dislike(
-					posts[i].getElementsByClassName('like-btn')[0].getAttribute('ajax').substring(8)
-				);
-			};
 			if (posts[i].getElementsByClassName('s-like-sentence').length > 0) {
 				let newDislike = posts[i]
 					.getElementsByClassName('s-like-sentence')[0]
@@ -111,7 +106,8 @@ function modifyPage() {
 			newDislikeButton.classList.add('dislike-button');
 			newDislikeButton.textContent = 'Dislike';
 			newDislikeButton.style.setProperty('color', 'red', 'important');
-			newDislikeButton.onlick = () => {
+			newDislikeButton.onclick = () => {
+				console.log('hi!');
 				dislike(
 					comments[i]
 						.getElementsByClassName('like-btn')[0]
@@ -173,6 +169,36 @@ function updateValues(dislikes) {
 		for (let j = 0; j < dislikes.length; ++j) {
 			if (dislikes[j].postId == id) {
 				if (counters[i].classList.contains('s-dislike-sentence')) {
+					if (dislikes[j].dislikedByUser) {
+						counters[i].parentElement.parentElement.getElementsByClassName(
+							'dislike-button'
+						)[0].onclick = () => {
+							undislike(
+								counters[i].parentElement.parentElement
+									.getElementsByClassName('like-btn')[0]
+									.getAttribute('ajax')
+									.substring(8)
+							);
+						};
+						counters[i].parentElement.parentElement.getElementsByClassName(
+							'dislike-button'
+						)[0].children[0].textContent = 'Undislike';
+					} else {
+						counters[i].parentElement.parentElement.getElementsByClassName(
+							'dislike-button'
+						)[0].onclick = () => {
+							dislike(
+								counters[i].parentElement.parentElement
+									.getElementsByClassName('like-btn')[0]
+									.getAttribute('ajax')
+									.substring(8)
+							);
+						};
+						counters[i].parentElement.parentElement.getElementsByClassName(
+							'dislike-button'
+						)[0].children[0].textContent = 'Dislike';
+					}
+
 					if (dislikes[j].dislikes > 0) {
 						counters[i].style.display = 'block';
 						if (dislikes[j].dislikes == 1 && dislikes[j].dislikedByUser)
@@ -189,23 +215,61 @@ function updateValues(dislikes) {
 								dislikes[j].dislikes + ' people disliked this';
 					} else counters[i].style.display = 'none';
 				} else {
+					if (dislikes[j].dislikedByUser) {
+						counters[
+							i
+						].parentElement.parentElement.parentElement.getElementsByClassName(
+							'dislike-button'
+						)[0].onclick = () => {
+							undislike(
+								counters[i].parentElement.parentElement.parentElement
+									.getElementsByClassName('like-btn')[0]
+									.getAttribute('ajax')
+									.substring(8)
+							);
+						};
+						counters[
+							i
+						].parentElement.parentElement.parentElement.getElementsByClassName(
+							'dislike-button'
+						)[0].textContent = 'Undislike';
+					} else {
+						counters[
+							i
+						].parentElement.parentElement.parentElement.getElementsByClassName(
+							'dislike-button'
+						)[0].onclick = () => {
+							dislike(
+								counters[i].parentElement.parentElement.parentElement
+									.getElementsByClassName('like-btn')[0]
+									.getAttribute('ajax')
+									.substring(8)
+							);
+						};
+						counters[
+							i
+						].parentElement.parentElement.parentElement.getElementsByClassName(
+							'dislike-button'
+						)[0].textContent = 'Dislike';
+					}
+
 					if (dislikes[j].dislikes > 0) {
 						counters[i].lastChild.textContent = dislikes[j].dislikes;
 						counters[i].parentElement.parentElement.style.display = 'inline';
 					} else counters[i].parentElement.parentElement.style.display = 'none';
 				}
-				let textToSet;
-				if (dislikes[j].dislikedByUser) textToSet = 'Undislike';
-				else textToSet = 'Dislike';
-				if (counters[i].classList.contains('s-dislike-sentence')) {
-					counters[i].parentElement.parentElement.getElementsByClassName(
-						'dislike-button'
-					)[0].children[0].textContent = textToSet;
-				} else {
-					counters[i].parentElement.parentElement.parentElement.getElementsByClassName(
-						'dislike-button'
-					)[0].textContent = textToSet;
-				}
+				// let textToSet;
+				// if (dislikes[j].dislikedByUser) textToSet = 'Undislike';
+				// else textToSet = 'Dislike';
+				// if (counters[i].classList.contains('s-dislike-sentence')) {
+				// 	counters[i].parentElement.parentElement.getElementsByClassName(
+				// 		'dislike-button'
+				// 	)[0].children[0].textContent = textToSet;
+				// } else {
+				// 	counters[i].parentElement.parentElement.parentElement.getElementsByClassName(
+				// 		'dislike-button'
+				// 	)[0].textContent = textToSet;
+				// }
 				break;
 			}
 		}
