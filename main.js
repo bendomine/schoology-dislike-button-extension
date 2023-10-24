@@ -1,7 +1,7 @@
 const SERVER_URL =
-	'https://script.google.com/macros/s/AKfycbwM6xsc9vJ_0I1c8r624Z0pstRWciDK0-JMKjrENz0ufAi5hlkxg8PERHlvYCKC0GEY/exec';
-const USER_ID = 'bens_test_id';
-
+	'https://script.google.com/macros/s/AKfycby_qNwSwiS-CLLV1gZNXrOrZc2qnX4VeuwmkKrDxOGVB9oUkaZdgGnEYakmjfl4QHFg/exec';
+let userId;
+let tempId;
 let numPosts = 0;
 
 function waitingForPostLoad() {
@@ -35,14 +35,18 @@ function updatePage() {
 	}
 
 	let request = new XMLHttpRequest();
-	request.open(
-		'GET',
-		SERVER_URL + '?mode=get&posts=' + JSON.stringify(query) + '&uid=' + USER_ID
-	);
-	request.send();
+	request.open('GET', SERVER_URL + '?mode=get&posts=' + JSON.stringify(query) + '&uid=' + userId);
 	request.onload = () => {
-		updateValues(JSON.parse(request.responseText).output);
+		let response = JSON.parse(request.responseText);
+		console.log('Schoology dislike extension-- response received: ' + request.responseText);
+		if (response.success) {
+			updateValues(response.output);
+		} else {
+			if (response.output.type) errorDialogue(response.output.type, response.output.message);
+			else errorDialogue('Error', response.output.message);
+		}
 	};
+	request.send();
 }
 
 function modifyPage() {
@@ -278,22 +282,249 @@ function updateValues(dislikes) {
 
 function dislike(postId) {
 	let request = new XMLHttpRequest();
-	request.open('GET', SERVER_URL + '?mode=add&post=' + postId + '&uid=' + USER_ID);
+	request.open('GET', SERVER_URL + '?mode=add&post=' + postId + '&uid=' + userId);
 	request.onload = () => {
-		console.log(request.responseText);
-		updatePage();
+		let response = JSON.parse(request.responseText);
+		console.log('Schoology dislike extension-- response received: ' + request.responseText);
+		if (response.success) {
+			updatePage();
+		} else {
+			if (response.output.type) errorDialogue(response.output.type, response.output.message);
+			else errorDialogue('Error', response.output.message);
+		}
 	};
 	request.send();
 }
 
 function undislike(postId) {
 	let request = new XMLHttpRequest();
-	request.open('GET', SERVER_URL + '?mode=remove&post=' + postId + '&uid=' + USER_ID);
+	request.open('GET', SERVER_URL + '?mode=remove&post=' + postId + '&uid=' + userId);
 	request.onload = () => {
-		console.log(request.responseText);
-		updatePage();
+		let response = JSON.parse(request.responseText);
+		console.log('Schoology dislike extension-- response received: ' + request.responseText);
+		if (response.success) {
+			updatePage();
+		} else {
+			if (response.output.type) errorDialogue(response.output.type, response.output.message);
+			else errorDialogue('Error', response.output.message);
+		}
 	};
 	request.send();
 }
 
-waitingForPostLoad();
+// function createNewUser() {
+// 	let email = prompt('Kehillah email address:');
+// 	let request = new XMLHttpRequest();
+// 	let uid = generateUid();
+// 	request.open('GET', SERVER_URL + '?mode=sendEmail&email=' + email + '&uid=' + uid);
+// 	request.onload = () => {
+// 		let response = JSON.parse(request.responseText);
+// 		console.log('Schoology dislike extension-- response received: ' + request.responseText);
+// 		if (response.success) {
+// 			verifyUser(email, uid);
+// 		} else {
+// 			if (response.output.type) errorDialogue(response.output.type, response.output.message);
+// 			else errorDialogue('Error', response.output.message);
+// 		}
+// 	};
+// 	request.send();
+// }
+
+// function verifyUser(email, uid) {
+// 	let code = prompt(
+// 		'Verification email sent. Please check your email (' + email + ') for the code.'
+// 	);
+// 	let request = new XMLHttpRequest();
+// 	request.open('GET', SERVER_URL + '?mode=verifyUser&code=' + code + '&uid=' + uid);
+// 	request.onload = () => {
+// 		let response = JSON.parse(request.responseText);
+// 		console.log('Schoology dislike extension-- response received: ' + request.responseText);
+// 		if (response.success) {
+// 			chrome.storage.sync.set({ uid: uid }).then(() => {
+// 				alert('User creation successful. ID is ' + uid);
+// 				userId = uid;
+// 				waitingForPostLoad();
+// 			});
+// 		} else {
+// 			if (response.output.type) errorDialogue(response.output.type, response.output.message);
+// 			else errorDialogue('Error', response.output.message);
+// 		}
+// 	};
+// 	request.send();
+// }
+
+function generateUid() {
+	let chars = '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	return 'xxxxxxxxxxxxxxxxxxxx'.replace(/x/g, () => {
+		return chars[Math.floor(Math.random() * chars.length)];
+	});
+}
+
+function userCreationDialogue() {
+	let uid = generateUid();
+
+	let dislikeCover = document.createElement('div');
+	dislikeCover.classList.add('dislike-cover');
+	document.body.appendChild(dislikeCover);
+
+	let dislikeDialogue = document.createElement('div');
+	dislikeDialogue.classList.add('dislike-dialogue');
+	dislikeCover.appendChild(dislikeDialogue);
+
+	let h1 = document.createElement('h1');
+	h1.innerText = 'Schoology dislike extension';
+	dislikeDialogue.appendChild(h1);
+
+	let h3 = document.createElement('h3');
+	h3.innerText = 'Thanks for using the extension! To continue, please verify your email address.';
+	dislikeDialogue.appendChild(h3);
+
+	let emailLabel = document.createElement('label');
+	emailLabel.for = 'emailInput';
+	emailLabel.textContent = 'Kehillah email:';
+	dislikeDialogue.appendChild(emailLabel);
+
+	let emailInput = document.createElement('input');
+	emailInput.type = 'text';
+	emailInput.name = 'emailInput';
+	dislikeDialogue.appendChild(emailInput);
+
+	dislikeDialogue.appendChild(document.createElement('br'));
+
+	let codeLabel = document.createElement('label');
+	codeLabel.for = 'codeInput';
+	codeLabel.textContent = 'Verification code:';
+	codeLabel.style.display = 'none';
+	dislikeDialogue.appendChild(codeLabel);
+
+	let codeInput = document.createElement('input');
+	codeInput.type = 'text';
+	codeInput.name = 'codeInput';
+	codeInput.style.display = 'none';
+	dislikeDialogue.appendChild(codeInput);
+
+	let continueButton = document.createElement('button');
+	continueButton.innerText = 'Continue';
+	continueButton.onclick = (event) => {
+		event.target.disabled = true;
+		event.target.parentElement
+			.getElementsByClassName('loading-hide')[0]
+			.classList.add('loading-show');
+		event.target.parentElement
+			.getElementsByClassName('loading-show')[0]
+			.classList.remove('loading-hide');
+		if (!event.target.parentElement.children[3].disabled) {
+			event.target.parentElement.children[3].disabled = true;
+			let email = event.target.parentElement.children[3].value;
+			let request = new XMLHttpRequest();
+			request.open('GET', SERVER_URL + '?mode=sendEmail&email=' + email + '&uid=' + uid);
+			request.onload = () => {
+				event.target.disabled = false;
+				let response = JSON.parse(request.responseText);
+				console.log(
+					'Schoology dislike extension-- response received: ' + request.responseText
+				);
+				event.target.parentElement
+					.getElementsByClassName('loading-show')[0]
+					.classList.add('loading-hide');
+				event.target.parentElement
+					.getElementsByClassName('loading-hide')[0]
+					.classList.remove('loading-show');
+				if (response.success) {
+					event.target.parentElement.children[5].style.display = 'inline';
+					event.target.parentElement.children[6].style.display = 'inline';
+				} else {
+					event.target.parentElement.children[3].disabled = false;
+					if (response.output.type)
+						errorDialogue(response.output.type, response.output.message);
+					else errorDialogue('Error', response.output.message);
+				}
+			};
+			request.send();
+		} else {
+			event.target.parentElement.children[6].disabled = true;
+			let code = event.target.parentElement.children[6].value;
+			let request = new XMLHttpRequest();
+			request.open('GET', SERVER_URL + '?mode=verifyUser&code=' + code + '&uid=' + uid);
+			request.onload = () => {
+				event.target.parentElement
+					.getElementsByClassName('loading-show')[0]
+					.classList.add('loading-hide');
+				event.target.parentElement
+					.getElementsByClassName('loading-hide')[0]
+					.classList.remove('loading-show');
+				let response = JSON.parse(request.responseText);
+				console.log(
+					'Schoology dislike extension-- response received: ' + request.responseText
+				);
+				if (response.success) {
+					chrome.storage.sync.set({ uid: uid }).then(() => {
+						document.getElementsByClassName('dislike-cover')[0].style.display = 'none';
+						errorDialogue('User creation successful', "You're all set up!");
+						userId = uid;
+						waitingForPostLoad();
+					});
+				} else {
+					event.target.parentElement.children[6].disabled = false;
+					event.target.disabled = false;
+					if (response.output.type)
+						errorDialogue(response.output.type, response.output.message);
+					else errorDialogue('Error', response.output.message);
+				}
+			};
+			request.send();
+		}
+	};
+	dislikeDialogue.appendChild(continueButton);
+
+	let closeButton = document.createElement('p');
+	closeButton.innerText = '×';
+	closeButton.onclick = closeDialogue;
+	dislikeDialogue.appendChild(closeButton);
+
+	let loading = document.createElement('div');
+	loading.classList.add('loading-hide');
+	dislikeDialogue.appendChild(loading);
+}
+
+function closeDialogue() {
+	document.getElementsByClassName('dislike-cover')[0].style.display = 'none';
+}
+
+function errorDialogue(heading, message) {
+	let errorCover = document.createElement('div');
+	errorCover.classList.add('error-cover');
+	document.body.appendChild(errorCover);
+
+	let errorDialogue = document.createElement('div');
+	errorDialogue.classList.add('error-dialogue');
+	errorCover.appendChild(errorDialogue);
+
+	let h1 = document.createElement('h1');
+	h1.innerText = heading;
+	errorDialogue.appendChild(h1);
+
+	let h3 = document.createElement('h3');
+	h3.innerText = message;
+	errorDialogue.appendChild(h3);
+
+	let closeButton = document.createElement('p');
+	closeButton.innerText = '×';
+	closeButton.onclick = (event) => {
+		closeError(event.target.parentElement.parentElement);
+	};
+	errorDialogue.appendChild(closeButton);
+}
+
+function closeError(target) {
+	target.remove();
+}
+
+chrome.storage.sync.clear();
+chrome.storage.sync.get(['uid']).then((result) => {
+	userId = result.uid;
+	if (userId) waitingForPostLoad();
+	else {
+		userCreationDialogue();
+	}
+});
