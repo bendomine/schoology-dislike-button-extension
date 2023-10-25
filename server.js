@@ -2,15 +2,6 @@ function initScriptProperties(){
   PropertiesService.getScriptProperties().setProperty("sheetId", SpreadsheetApp.getActiveSpreadsheet().getId());
 }
 
-// function test(){
-//   let DISLIKE_DATA = SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty("sheetId")).getSheetByName("dislike_data");
-//   let USER_REGISTRY = SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty("sheetId")).getSheetByName("user_registry");
-//   let postRows = DISLIKE_DATA.getRange("A:A").offset(1, 0).createTextFinder("testing").matchEntireCell(true).matchCase(true).findAll();
-//   for (let i = 0; i < postRows.length; ++i){
-    
-//   }
-// }
-
 function doGet(e){
   let DISLIKE_DATA = SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty("sheetId")).getSheetByName("dislike_data");
   let USER_REGISTRY = SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty("sheetId")).getSheetByName("user_registry");
