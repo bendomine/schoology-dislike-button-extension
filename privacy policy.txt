@@ -1,0 +1,5 @@
+Schoology Dislike Button Extension Privacy Policy
+This privacy policy is subject to change without prior notice (but I probably won't change it)
+
+This extension will collect only one piece of data from you, and that is your email. This is necessary in order to ensure that the user has a KJHS email for the purposes of user verification.
+Your email will not be shared in any way. No one else will be able to see your email or what posts you dislike, though this may be changed in the future if necessary.
