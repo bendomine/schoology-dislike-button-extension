@@ -1,5 +1,5 @@
 const SERVER_URL =
-	'https://script.google.com/macros/s/AKfycby_qNwSwiS-CLLV1gZNXrOrZc2qnX4VeuwmkKrDxOGVB9oUkaZdgGnEYakmjfl4QHFg/exec';
+	'https://script.google.com/macros/s/AKfycbwhYbv8zoE_0FWIjWfMIMlZeQn2dJy1JHMHMsNR2FsDkY7Rw0OwGv-PM33Rbvz89FtPkA/exec';
 let userId;
 let tempId;
 let numPosts = 0;
@@ -65,7 +65,7 @@ function modifyPage() {
 				);
 			newDislikeButton.children[0].textContent = 'Dislike';
 			newDislikeButton.classList.add('dislike-button');
-			newDislikeButton.children[0].style.color = 'red';
+			newDislikeButton.children[0].style.setProperty('color', 'red', 'important');
 			newDislikeButton.removeAttribute('ajax');
 			if (posts[i].getElementsByClassName('s-like-sentence').length > 0) {
 				let newDislike = posts[i]
@@ -76,10 +76,13 @@ function modifyPage() {
 					);
 				newDislike.className = 's-dislike-sentence';
 				newDislike.classList.add('dislike-counter');
-				newDislike.children[0].style.background =
+				newDislike.children[0].style.setProperty(
+					'background',
 					'url(' +
-					chrome.runtime.getURL('images/icons_sprite_feed_modified.png') +
-					') no-repeat -1px -76px';
+						chrome.runtime.getURL('images/icons_sprite_feed_modified.png') +
+						') no-repeat -1px -76px',
+					'important'
+				);
 				newDislike.children[1].remove();
 				newDislike.lastChild.textContent = '__ people disliked this';
 			} else {
@@ -92,7 +95,7 @@ function modifyPage() {
 						'afterend',
 						'<span class="s-dislike-sentence dislike-counter"><span style="background: url(' +
 							chrome.runtime.getURL('images/icons_sprite_feed_modified.png') +
-							') -1px -76px no-repeat;"></span>__ people disliked this</span>'
+							') -1px -76px no-repeat !important;"></span>__ people disliked this</span>'
 					);
 			}
 		}
@@ -111,7 +114,6 @@ function modifyPage() {
 			newDislikeButton.textContent = 'Dislike';
 			newDislikeButton.style.setProperty('color', 'red', 'important');
 			newDislikeButton.onclick = () => {
-				console.log('hi!');
 				dislike(
 					comments[i]
 						.getElementsByClassName('like-btn')[0]
@@ -124,7 +126,7 @@ function modifyPage() {
 				'afterend',
 				'<span class="infotip sCommonInfotip-processed s-dislike-comment" tipsygravity="s" tabindex="0" original-title=""><a class="like-details-btn schoology-processed sExtlink-processed" style="background: url(' +
 					chrome.runtime.getURL('images/icons_sprite_feed_modified.png') +
-					') 0px -77px no-repeat;"><span class="s-like-comment-icon dislike-counter">__</span></a><span class="infotip-content">__ people like this</span></span>'
+					') 0px -77px no-repeat !important;"><span class="s-like-comment-icon dislike-counter">__</span></a><span class="infotip-content">__ people like this</span></span>'
 			);
 			// newDislikeCounter.getElementsByClassName('s-like-comment-icon')[0].style.color = 'red';
 		}
@@ -172,6 +174,7 @@ function updateValues(dislikes) {
 				.substring(8);
 		for (let j = 0; j < dislikes.length; ++j) {
 			if (dislikes[j].postId == id) {
+				counters[i].dataset.dislikes = dislikes[j].dislikes;
 				if (counters[i].classList.contains('s-dislike-sentence')) {
 					if (dislikes[j].dislikedByUser) {
 						counters[i].parentElement.parentElement.getElementsByClassName(
@@ -262,25 +265,37 @@ function updateValues(dislikes) {
 						counters[i].parentElement.parentElement.style.display = 'inline';
 					} else counters[i].parentElement.parentElement.style.display = 'none';
 				}
-				// let textToSet;
-				// if (dislikes[j].dislikedByUser) textToSet = 'Undislike';
-				// else textToSet = 'Dislike';
-				// if (counters[i].classList.contains('s-dislike-sentence')) {
-				// 	counters[i].parentElement.parentElement.getElementsByClassName(
-				// 		'dislike-button'
-				// 	)[0].children[0].textContent = textToSet;
-				// } else {
-				// 	counters[i].parentElement.parentElement.parentElement.getElementsByClassName(
-				// 		'dislike-button'
-				// 	)[0].textContent = textToSet;
-				// }
-				break;
 			}
 		}
 	}
 }
 
 function dislike(postId) {
+	let counters = document.getElementsByClassName('dislike-counter');
+	let id;
+	for (let i = 0; i < counters.length; ++i) {
+		if (counters[i].classList.contains('s-dislike-sentence')) {
+			id = counters[i].parentElement.parentElement
+				.getElementsByClassName('like-btn')[0]
+				.getAttribute('ajax')
+				.substring(8);
+		} else
+			id = counters[i].parentElement.parentElement.parentElement
+				.getElementsByClassName('like-btn')[0]
+				.getAttribute('ajax')
+				.substring(8);
+		if (postId == id) {
+			setTimeout(() => {
+				updateValues([
+					{
+						postId: postId,
+						dislikedByUser: true,
+						dislikes: +counters[i].dataset.dislikes + 1
+					}
+				]);
+			}, 1000);
+		}
+	}
 	let request = new XMLHttpRequest();
 	request.open('GET', SERVER_URL + '?mode=add&post=' + postId + '&uid=' + userId);
 	request.onload = () => {
@@ -297,6 +312,31 @@ function dislike(postId) {
 }
 
 function undislike(postId) {
+	let counters = document.getElementsByClassName('dislike-counter');
+	let id;
+	for (let i = 0; i < counters.length; ++i) {
+		if (counters[i].classList.contains('s-dislike-sentence')) {
+			id = counters[i].parentElement.parentElement
+				.getElementsByClassName('like-btn')[0]
+				.getAttribute('ajax')
+				.substring(8);
+		} else
+			id = counters[i].parentElement.parentElement.parentElement
+				.getElementsByClassName('like-btn')[0]
+				.getAttribute('ajax')
+				.substring(8);
+		if (postId == id) {
+			setTimeout(() => {
+				updateValues([
+					{
+						postId: postId,
+						dislikedByUser: false,
+						dislikes: +counters[i].dataset.dislikes - 1
+					}
+				]);
+			}, 1000);
+		}
+	}
 	let request = new XMLHttpRequest();
 	request.open('GET', SERVER_URL + '?mode=remove&post=' + postId + '&uid=' + userId);
 	request.onload = () => {
@@ -311,47 +351,6 @@ function undislike(postId) {
 	};
 	request.send();
 }
-
-// function createNewUser() {
-// 	let email = prompt('Kehillah email address:');
-// 	let request = new XMLHttpRequest();
-// 	let uid = generateUid();
-// 	request.open('GET', SERVER_URL + '?mode=sendEmail&email=' + email + '&uid=' + uid);
-// 	request.onload = () => {
-// 		let response = JSON.parse(request.responseText);
-// 		console.log('Schoology dislike extension-- response received: ' + request.responseText);
-// 		if (response.success) {
-// 			verifyUser(email, uid);
-// 		} else {
-// 			if (response.output.type) errorDialogue(response.output.type, response.output.message);
-// 			else errorDialogue('Error', response.output.message);
-// 		}
-// 	};
-// 	request.send();
-// }
-
-// function verifyUser(email, uid) {
-// 	let code = prompt(
-// 		'Verification email sent. Please check your email (' + email + ') for the code.'
-// 	);
-// 	let request = new XMLHttpRequest();
-// 	request.open('GET', SERVER_URL + '?mode=verifyUser&code=' + code + '&uid=' + uid);
-// 	request.onload = () => {
-// 		let response = JSON.parse(request.responseText);
-// 		console.log('Schoology dislike extension-- response received: ' + request.responseText);
-// 		if (response.success) {
-// 			chrome.storage.sync.set({ uid: uid }).then(() => {
-// 				alert('User creation successful. ID is ' + uid);
-// 				userId = uid;
-// 				waitingForPostLoad();
-// 			});
-// 		} else {
-// 			if (response.output.type) errorDialogue(response.output.type, response.output.message);
-// 			else errorDialogue('Error', response.output.message);
-// 		}
-// 	};
-// 	request.send();
-// }
 
 function generateUid() {
 	let chars = '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -520,7 +519,7 @@ function closeError(target) {
 	target.remove();
 }
 
-chrome.storage.sync.clear();
+// chrome.storage.sync.clear();
 chrome.storage.sync.get(['uid']).then((result) => {
 	userId = result.uid;
 	if (userId) waitingForPostLoad();
