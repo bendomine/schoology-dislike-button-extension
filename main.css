@@ -203,6 +203,8 @@
 	transform: translate(-50%, -50%);
 	border-radius: 5px;
 	padding: 10px;
+	padding-left: 20px;
+	padding-right: 20px;
 }
 .error-dialogue * {
 	margin: 5px;
@@ -211,6 +213,8 @@
 	display: inline !important;
 	font-size: 20px !important;
 	color: rgb(99, 99, 255) !important;
+	padding-top: 10px;
+	margin-top: 10px;
 }
 .error-cover .error-dialogue h3 {
 	color: black !important;
