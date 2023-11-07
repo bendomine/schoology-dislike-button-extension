@@ -1,8 +1,11 @@
-const SERVER_URL =
-	'https://script.google.com/macros/s/AKfycbwhYbv8zoE_0FWIjWfMIMlZeQn2dJy1JHMHMsNR2FsDkY7Rw0OwGv-PM33Rbvz89FtPkA/exec';
+let SERVER_URL =
+	'https://script.google.com/macros/s/AKfycbxTBo3ZJ3V6sWb8MhHj7mecIoYLjbi1w14sOuWuGL0w4I4SWHnxucbAWOJUoneZoBpsaw/exec';
 let userId;
 let tempId;
 let numPosts = 0;
+let version = '1.0.0.1';
+let changelog =
+	"Changes for version 1.0.0.1:\n\n- Added changelog\n- Added secondary server to prevent update downtime\n- Adjusted user creation and error dialogues\n- Fixed an error that occurred when the user was the only person to like a post\n- Fixed an error that occurred with posts from courses in which the user doesn't have commenting privileges";
 
 function waitingForPostLoad() {
 	let newNumPosts = document.getElementsByClassName('edge-item').length;
@@ -12,6 +15,13 @@ function waitingForPostLoad() {
 	}
 	numPosts = newNumPosts;
 	updatePage();
+	chrome.storage.sync.get(['version']).then((result) => {
+		if (result.version != version) {
+			errorDialogue('Schoology Dislike Button: Changelog', changelog);
+
+			chrome.storage.sync.set({ version: version });
+		}
+	});
 }
 
 function waitingForCommentLoad(target) {
@@ -54,15 +64,34 @@ function modifyPage() {
 
 	for (let i = 0; i < posts.length; ++i) {
 		if (posts[i].getElementsByClassName('s-dislike-sentence').length == 0) {
-			posts[i]
-				.getElementsByClassName('edge-footer')[0]
-				.children[2].insertAdjacentText('afterend', ' · ');
-			let newDislikeButton = posts[i]
-				.getElementsByClassName('edge-footer')[0]
-				.children[3].insertAdjacentElement(
-					'beforebegin',
-					posts[i].getElementsByClassName('edge-footer')[0].children[2].cloneNode(true)
-				);
+			if (posts[i].getElementsByClassName('edge-footer')[0].children[3])
+				posts[i]
+					.getElementsByClassName('edge-footer')[0]
+					.children[2].insertAdjacentText('afterend', ' · ');
+			else
+				posts[i]
+					.getElementsByClassName('edge-footer')[0]
+					.children[1].insertAdjacentText('afterend', ' · ');
+			let newDislikeButton;
+			if (posts[i].getElementsByClassName('edge-footer')[0].children[3]) {
+				newDislikeButton = posts[i]
+					.getElementsByClassName('edge-footer')[0]
+					.children[3].insertAdjacentElement(
+						'beforebegin',
+						posts[i]
+							.getElementsByClassName('edge-footer')[0]
+							.children[2].cloneNode(true)
+					);
+			} else {
+				newDislikeButton = posts[i]
+					.getElementsByClassName('edge-footer')[0]
+					.children[2].insertAdjacentElement(
+						'beforebegin',
+						posts[i]
+							.getElementsByClassName('edge-footer')[0]
+							.children[1].cloneNode(true)
+					);
+			}
 			newDislikeButton.children[0].textContent = 'Dislike';
 			newDislikeButton.classList.add('dislike-button');
 			newDislikeButton.children[0].style.setProperty('color', 'red', 'important');
@@ -83,7 +112,7 @@ function modifyPage() {
 						') no-repeat -1px -76px',
 					'important'
 				);
-				newDislike.children[1].remove();
+				if (newDislike.children[1]) newDislike.children[1].remove();
 				newDislike.lastChild.textContent = '__ people disliked this';
 			} else {
 				posts[i]
@@ -375,7 +404,8 @@ function userCreationDialogue() {
 	dislikeDialogue.appendChild(h1);
 
 	let h3 = document.createElement('h3');
-	h3.innerText = 'Thanks for using the extension! To continue, please verify your email address.';
+	h3.innerText =
+		'Thanks for using the extension! To continue, please verify your Kehillah email address.';
 	dislikeDialogue.appendChild(h3);
 
 	let emailLabel = document.createElement('label');
@@ -387,6 +417,13 @@ function userCreationDialogue() {
 	emailInput.type = 'text';
 	emailInput.name = 'emailInput';
 	dislikeDialogue.appendChild(emailInput);
+
+	dislikeDialogue.appendChild(document.createElement('br'));
+
+	let codeExplanation = document.createElement('h3');
+	codeExplanation.innerText = 'Please check your Kehillah email for a verification code.';
+	codeExplanation.style.display = 'none';
+	dislikeDialogue.appendChild(codeExplanation);
 
 	dislikeDialogue.appendChild(document.createElement('br'));
 
@@ -405,6 +442,8 @@ function userCreationDialogue() {
 	let continueButton = document.createElement('button');
 	continueButton.innerText = 'Continue';
 	continueButton.onclick = (event) => {
+		let sync = false;
+
 		event.target.disabled = true;
 		event.target.parentElement
 			.getElementsByClassName('loading-hide')[0]
@@ -432,17 +471,27 @@ function userCreationDialogue() {
 				if (response.success) {
 					event.target.parentElement.children[5].style.display = 'inline';
 					event.target.parentElement.children[6].style.display = 'inline';
+					event.target.parentElement.children[7].style.display = 'inline';
+					event.target.parentElement.children[8].style.display = 'inline';
 				} else {
 					event.target.parentElement.children[3].disabled = false;
+					// if (response.output.message == 'Email already in use') {
+					// 	errorDialogue(
+					// 		'Email already in use',
+					// 		"If you've used this extension before, check your email for a verification code to link this extension. If you haven't used this extension before, please contact me at bendominedeveloper@gmail.com."
+					// 	);
+					// }
 					if (response.output.type)
 						errorDialogue(response.output.type, response.output.message);
-					else errorDialogue('Error', response.output.message);
+					else {
+						errorDialogue('Error', response.output.message);
+					}
 				}
 			};
 			request.send();
 		} else {
-			event.target.parentElement.children[6].disabled = true;
-			let code = event.target.parentElement.children[6].value;
+			event.target.parentElement.children[8].disabled = true;
+			let code = event.target.parentElement.children[8].value;
 			let request = new XMLHttpRequest();
 			request.open('GET', SERVER_URL + '?mode=verifyUser&code=' + code + '&uid=' + uid);
 			request.onload = () => {
@@ -461,10 +510,11 @@ function userCreationDialogue() {
 						document.getElementsByClassName('dislike-cover')[0].style.display = 'none';
 						errorDialogue('User creation successful', "You're all set up!");
 						userId = uid;
+						chrome.storage.sync.set({ version: version });
 						waitingForPostLoad();
 					});
 				} else {
-					event.target.parentElement.children[6].disabled = false;
+					event.target.parentElement.children[8].disabled = false;
 					event.target.disabled = false;
 					if (response.output.type)
 						errorDialogue(response.output.type, response.output.message);
@@ -512,18 +562,36 @@ function errorDialogue(heading, message) {
 	closeButton.onclick = (event) => {
 		closeError(event.target.parentElement.parentElement);
 	};
+	let closeEvent = document.addEventListener('keydown', (event) => {
+		if (event.key == 'Escape') {
+			closeError(document.getElementsByClassName('error-cover')[0]);
+		}
+	});
 	errorDialogue.appendChild(closeButton);
 }
 
 function closeError(target) {
-	target.remove();
+	if (target) target.remove();
 }
 
 // chrome.storage.sync.clear();
-chrome.storage.sync.get(['uid']).then((result) => {
-	userId = result.uid;
-	if (userId) waitingForPostLoad();
-	else {
-		userCreationDialogue();
+let request = new XMLHttpRequest();
+request.open('GET', SERVER_URL);
+request.onload = () => {
+	let response = JSON.parse(request.responseText);
+	console.log('Schoology dislike extension-- response received: ' + request.responseText);
+	if (response.success) {
+		SERVER_URL = response.output.url;
+		chrome.storage.sync.get(['uid']).then((result) => {
+			userId = result.uid;
+			if (userId) waitingForPostLoad();
+			else {
+				userCreationDialogue();
+			}
+		});
+	} else {
+		if (response.output.type) errorDialogue(response.output.type, response.output.message);
+		else errorDialogue('Error', response.output.message);
 	}
-});
+};
+request.send();
